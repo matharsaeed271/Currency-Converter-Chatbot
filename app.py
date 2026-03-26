@@ -106,7 +106,6 @@ def fetch_conversion_factor(source, target):
     # .format(source,target)]
     # return data['conversion_rate']
 
-if __name__ == '__main__':
-    # print(fetch_conversion_factor("{source}", "{target}"))
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
 
