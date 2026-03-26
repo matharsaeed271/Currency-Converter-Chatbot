@@ -26,9 +26,9 @@ def get_amount_param(param):
 
 
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    data = request.get_json(silent=True)
+@app.route('/', methods=['POST'])
+def index():
+    data = request.get_json()
     text = data.get('queryResult', {}).get('queryText', '')
     params = data.get('queryResult', {}).get('parameters', {})
     # params = data['queryResult']['parameters']
