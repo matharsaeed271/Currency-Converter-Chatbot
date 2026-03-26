@@ -6,6 +6,9 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return render_template('currency_converter.html')  # HTML file
+@app.route('/')
+def home():
+    return "Bot is running ✅"
 
 def get_currency_param(param):
     # agar list hai → pehla element lo
