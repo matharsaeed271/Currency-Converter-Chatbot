@@ -103,7 +103,7 @@ def fetch_conversion_factor(source, target):
 
 # return data["choices"][0]["message"]["content"]
 #######################################################
-def ask_groq_llama(prompt):
+def ask_groq_chatbot(user_input):
     api_key = st.secrets["GROQ_API_KEY"]
 
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -116,18 +116,20 @@ def ask_groq_llama(prompt):
     body = {
         "model": "llama-3.1-8b-instant",
         "messages": [
-            {"role": "system", "content": "Return JSON only"},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are a helpful, friendly AI chatbot. Answer in a natural conversational way."
+            },
+            {
+                "role": "user",
+                "content": user_input
+            }
         ],
-        "temperature": 0.0,
-        "max_tokens": 80
+        "temperature": 0.7,
+        "max_tokens": 200
     }
 
-    session = requests.Session()
-    retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
-    session.mount('https://', HTTPAdapter(max_retries=retries))
-
-    res = session.post(url, json=body, headers=headers)
+    res = requests.post(url, json=body, headers=headers)
     res.raise_for_status()
 
     data = res.json()
@@ -137,38 +139,42 @@ def ask_groq_llama(prompt):
 # -----------------------------
 # Handle User Queries (currency + normal conversation)
 # -----------------------------
-def handle_user_query(user_query):
-    # Check if it's a currency conversion query
-    if re.search(r"\d+", user_query) and re.search(r"(USD|PKR|EUR|GBP|INR|JPY|AUD|CAD|\$)", user_query.upper()):
-        try:
-            groq_response = ask_groq_llama(user_query)
-            output_text = groq_response.strip()
+# def handle_user_query(user_query):
+#     # Check if it's a currency conversion query
+#     if re.search(r"\d+", user_query) and re.search(r"(USD|PKR|EUR|GBP|INR|JPY|AUD|CAD|\$)", user_query.upper()):
+#         try:
+#             groq_response = ask_groq_llama(user_query)
+#             output_text = groq_response.strip()
             
-            # Extract JSON safely
-            match = re.search(r"\{.*?\}", output_text, re.DOTALL)
-            if match:
-                parsed = json.loads(match.group(0))
-                amt = float(parsed.get("amount"))
-                src = parsed.get("source").upper()
-                tgt = parsed.get("target").upper()
-                cf = fetch_conversion_factor(src, tgt)
-                conv_result = round(amt * cf, 2)
-                return f"{amt} {src} = {conv_result} {tgt}"
-            else:
-                return "Sorry, I couldn't parse the query 🤖"
-        except Exception as e:
-            return f"Error: {e}"
-    else:
-        # Normal conversation replies (brief)
-        greetings = ["hi", "hello", "hey", "good morning", "good evening"]
-        msg = user_query.lower()
-        if msg in greetings:
-            return "Hello! 😊"
-        elif "how are you" in msg:
-            return "I'm good, thanks! How about you? 🤗"
-        else:
-            return "I can help with currency conversion 💱. Try: 'Convert 100 USD to PKR'"
-
+#             # Extract JSON safely
+#             match = re.search(r"\{.*?\}", output_text, re.DOTALL)
+#             if match:
+#                 parsed = json.loads(match.group(0))
+#                 amt = float(parsed.get("amount"))
+#                 src = parsed.get("source").upper()
+#                 tgt = parsed.get("target").upper()
+#                 cf = fetch_conversion_factor(src, tgt)
+#                 conv_result = round(amt * cf, 2)
+#                 return f"{amt} {src} = {conv_result} {tgt}"
+#             else:
+#                 return "Sorry, I couldn't parse the query 🤖"
+#         except Exception as e:
+#             return f"Error: {e}"
+#     else:
+#         # Normal conversation replies (brief)
+#         greetings = ["hi", "hello", "hey", "good morning", "good evening"]
+#         msg = user_query.lower()
+#         if msg in greetings:
+#             return "Hello! 😊"
+#         elif "how are you" in msg:
+#             return "I'm good, thanks! How about you? 🤗"
+#         else:
+#             return "I can help with currency conversion 💱. Try: 'Convert 100 USD to PKR'"
+def handle_user_query(user_query):
+    try:
+        return ask_groq_chatbot(user_query)
+    except Exception as e:
+        return f"Error: {e}"
 # -----------------------------
 # Streamlit UI
 # -----------------------------
@@ -198,13 +204,34 @@ if st.button("Convert 💸"):
 
 # Chatbot Section
 st.markdown("---")
-st.subheader("🤖 Chatbot (Natural Language)")
+st.subheader("🤖 Chatbot (AI Conversation)")
 
-user_query = st.text_input("Ask something like: 'Convert 150 USD to PKR'")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-if st.button("Ask Chatbot"):
-    reply = handle_user_query(user_query)
-    st.success(reply)
+# Display chat history
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# User input
+prompt = st.chat_input("Type your message...")
+
+if prompt:
+    # Save user message
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Get AI response
+    reply = ask_groq_chatbot(prompt)
+
+    # Save bot reply
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+
+    with st.chat_message("assistant"):
+        st.markdown(reply)
 
 # Footer
 st.markdown("<hr style='border: 2px solid black;'>", unsafe_allow_html=True)
