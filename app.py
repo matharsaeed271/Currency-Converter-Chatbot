@@ -238,7 +238,7 @@ def handle_user_query(user_query):
      # 🚫 BLOCK ANY OTHER QUESTIONS ABOUT HIM
     if "athar ur rahman" in msg or "muhammad athar ur rahman" in msg:
         if any(x in msg for x in extra_info_keywords):
-        return "He is my creator 👨‍💻. No additional information is available.🚫(NOT ALLOWED)"
+            return "He is my creator 👨‍💻. No additional information is available.🚫(NOT ALLOWED)"
 
     return (
         "Muhammad Athar Ur Rahman is my creator 👨‍💻. "
