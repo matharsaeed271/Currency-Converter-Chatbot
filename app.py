@@ -71,12 +71,24 @@ Now parse this query:
 \"\"\"{prompt}\"\"\"
 """
 
-    body = {
-        "model": "llama-3.1-8b-instant",
-        "input": groq_prompt,
-        "max_output_tokens": 80,
-        "temperature": 0.0
-    }
+body = {
+    "model": "llama-3.1-8b-instant",
+    "messages": [
+        {
+            "role": "system",
+            "content": """You are a JSON parser for currency conversion queries.
+Extract AMOUNT, SOURCE_CURRENCY, TARGET_CURRENCY.
+Return ONLY valid JSON like:
+{"amount":150,"source":"USD","target":"PKR"}"""
+        },
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ],
+    "temperature": 0.0,
+    "max_tokens": 80
+}
 
     # Retry session for robustness
     session = requests.Session()
@@ -96,7 +108,7 @@ def handle_user_query(user_query):
     if re.search(r"\d+", user_query) and re.search(r"\b(USD|PKR|EUR|GBP|INR|JPY|AUD|CAD)\b", user_query.upper()):
         try:
             groq_response = ask_groq_llama(user_query)
-            output_text = groq_response.get("output_text") or groq_response.get("output") or ""
+            output_text = groq_response
             
             # Extract JSON safely
             match = re.search(r"\{.*\}", output_text, re.DOTALL)
