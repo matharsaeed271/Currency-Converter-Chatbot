@@ -91,15 +91,15 @@ Return ONLY valid JSON like:
 }
 
     # Retry session for robustness
-    session = requests.session()
-    retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
-    session.mount('https://', HTTPAdapter(max_retries=retries))
+session = requests.session()
+retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
+session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    res = session.post(url, json=body, headers=headers)
-    res.raise_for_status()
+res = session.post(url, json=body, headers=headers)
+res.raise_for_status()
 
-    data = res.json()
-    return data["choices"][0]["message"]["content"]
+data = res.json()
+return data["choices"][0]["message"]["content"]
 
 # -----------------------------
 # Handle User Queries (currency + normal conversation)
