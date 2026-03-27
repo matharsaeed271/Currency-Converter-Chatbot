@@ -1,105 +1,165 @@
-import streamlit as st
+import os
+import json
 import requests
+import streamlit as st
+from dotenv import load_dotenv
+import re
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
-# Page config
-st.set_page_config(page_title="Currency Converter 💱", layout="centered")
+# -----------------------------
+# Load .env
+# -----------------------------
+load_dotenv()  # make sure GROQ_API_KEY is set here
 
-# ----------- STYLE (Premium Look) -----------
-st.markdown("""
-<style>
-.main {
-    background-color: #0E1117;
-}
-.card {
-    background-color: #1C1F26;
-    padding: 40px;
-    border-radius: 18px;
-    box-shadow: 0px 10px 30px rgba(0,0,0,0.4);
-}
-.title {
-    text-align: center;
-    font-size: 34px;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-.subtitle {
-    text-align: center;
-    color: #A0A0A0;
-    margin-bottom: 30px;
-}
-.result {
-    text-align: center;
-    font-size: 26px;
-    font-weight: 600;
-    margin-top: 25px;
-}
-</style>
-""", unsafe_allow_html=True)
+# -----------------------------
+# Full Currency List
+# -----------------------------
+CURRENCIES = [
+    "USD", "EUR", "GBP", "PKR", "INR", "AUD", "CAD", "SGD", "AED", "SAR",
+    "JPY", "CNY", "CHF", "NZD", "HKD", "SEK", "NOK", "DKK", "ZAR",
+    "TRY", "RUB", "BRL", "MXN", "KRW", "MYR", "THB", "IDR",
+    "PLN", "HUF", "CZK", "ILS", "PHP", "EGP", "KWD", "QAR",
+    "BHD", "OMR", "LKR", "BDT", "NPR", "VND", "NGN", "KES"
+]
 
-# ----------- API FUNCTION -----------
+# -----------------------------
+# Helper Functions
+# -----------------------------
+def get_currency_param(param):
+    if isinstance(param, list):
+        param = param[0]
+    if isinstance(param, dict) and 'currency' in param:
+        param = param['currency']
+    return param
+
 def fetch_conversion_factor(source, target):
-    api_key = "976a15c6f5679f761785d6a1"
+    api_key = "976a15c6f5679f761785d6a1"  # ExchangeRate API key
+    source = source.upper()
+    target = target.upper()
     url = f"https://v6.exchangerate-api.com/v6/{api_key}/pair/{source}/{target}"
     response = requests.get(url).json()
-
-    if response['result'] == 'success':
+    if response.get('result') == 'success':
         return response['conversion_rate']
-    return None
+    else:
+        raise ValueError(f"Failed to get conversion rate: {response.get('error-type', 'Unknown error')}")
 
-# ----------- ALL CURRENCIES -----------
-currencies = sorted([
-    "USD","PKR","EUR","GBP","INR","AUD","CAD","AED","SAR","CNY","JPY","CHF",
-    "NZD","ZAR","TRY","SGD","HKD","SEK","NOK","DKK","RUB","BRL","MXN","MYR",
-    "THB","IDR","KRW","PLN","PHP","CZK","HUF","ILS","CLP","BDT","EGP"
-])
+# -----------------------------
+# Groq Chatbot Function with retry
+# -----------------------------
+def ask_groq_llama(prompt):
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY not set in environment")
+    
+    url = "https://api.groq.com/openai/v1/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
 
-# ----------- UI CARD -----------
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    groq_prompt = f"""
+You are a JSON parser for currency conversion queries.
+Extract AMOUNT, SOURCE_CURRENCY, TARGET_CURRENCY.
+Always respond in *valid JSON only*, no extra text.
 
-    st.markdown('<div class="title">💱 Currency Converter</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Accurate • Clean • Professional</div>', unsafe_allow_html=True)
+Example:
+Input: "Convert 150 USD to PKR"
+Output: {{"amount":150,"source":"USD","target":"PKR"}}
 
-    # 🔹 LARGE AMOUNT BOX (Top Priority)
-    amount = st.number_input(
-        "Amount",
-        min_value=0.0,
-        value=100.0,
-        step=1.0,
-        format="%.2f"
-    )
+Now parse this query:
+\"\"\"{prompt}\"\"\"
+"""
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    body = {
+        "model": "llama-3.1-8b-instant",
+        "input": groq_prompt,
+        "max_output_tokens": 80,
+        "temperature": 0.0
+    }
 
-    # 🔹 FROM currency (full width)
-    from_currency = st.selectbox("From Currency", currencies, index=0)
+    # Retry session for robustness
+    session = requests.Session()
+    retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    
+    res = session.post(url, json=body, headers=headers, timeout=60)
+    res.raise_for_status()
+    data = res.json()
+    return data
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # 🔹 TO currency (full width)
-    to_currency = st.selectbox("To Currency", currencies, index=1)
-
-    # 🔹 BUTTON
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    convert = st.button("Convert 💱", use_container_width=True)
-
-    # 🔹 RESULT
-    if convert:
-        rate = fetch_conversion_factor(from_currency, to_currency)
-
-        if rate:
-            result = round(amount * rate, 2)
-
-            st.markdown(f"""
-                <div class="result">
-                    {amount} {from_currency} = {result} {to_currency}
-                </div>
-            """, unsafe_allow_html=True)
+# -----------------------------
+# Handle User Queries (currency + normal conversation)
+# -----------------------------
+def handle_user_query(user_query):
+    # Check if it's a currency conversion query
+    if re.search(r"\d+", user_query) and re.search(r"\b(USD|PKR|EUR|GBP|INR|JPY|AUD|CAD)\b", user_query.upper()):
+        try:
+            groq_response = ask_groq_llama(user_query)
+            output_text = groq_response.get("output_text") or groq_response.get("output") or ""
+            
+            # Extract JSON safely
+            match = re.search(r"\{.*\}", output_text, re.DOTALL)
+            if match:
+                parsed = json.loads(match.group(0))
+                amt = float(parsed.get("amount"))
+                src = parsed.get("source").upper()
+                tgt = parsed.get("target").upper()
+                cf = fetch_conversion_factor(src, tgt)
+                conv_result = round(amt * cf, 2)
+                return f"{amt} {src} = {conv_result} {tgt}"
+            else:
+                return "Sorry, I couldn't parse the query 🤖"
+        except Exception as e:
+            return f"Error: {e}"
+    else:
+        # Normal conversation replies (brief)
+        greetings = ["hi", "hello", "hey", "good morning", "good evening"]
+        msg = user_query.lower()
+        if msg in greetings:
+            return "Hello! 😊"
+        elif "how are you" in msg:
+            return "I'm good, thanks! How about you? 🤗"
         else:
-            st.error("Conversion failed ❌")
+            return "I can help with currency conversion 💱. Try: 'Convert 100 USD to PKR'"
 
-    st.markdown('</div>', unsafe_allow_html=True)
+# -----------------------------
+# Streamlit UI
+# -----------------------------
+st.set_page_config(page_title="Currency Converter & Chatbot", page_icon="💱")
+st.title("💱 Currency Converter & Chatbot")
+st.markdown("### Convert currencies instantly or ask in plain language 🌍💬")
+
+# Classic Converter
+st.subheader("🔁 Classic Currency Converter")
+col1, col2 = st.columns(2)
+with col1:
+    source_currency = st.selectbox("From Currency", CURRENCIES, index=0)
+with col2:
+    target_currency = st.selectbox("To Currency", CURRENCIES, index=3)
+
+amount = st.number_input("Amount", min_value=0.0, value=1.0)
+
+if st.button("Convert 💸"):
+    try:
+        src = get_currency_param(source_currency)
+        tgt = get_currency_param(target_currency)
+        cf = fetch_conversion_factor(src, tgt)
+        result = round(amount * cf, 2)
+        st.success(f"{amount} {src} = {result} {tgt}")
+    except Exception as e:
+        st.error(f"Error: {e}")
+
+# Chatbot Section
+st.markdown("---")
+st.subheader("🤖 Chatbot (Natural Language)")
+
+user_query = st.text_input("Ask something like: 'Convert 150 USD to PKR'")
+
+if st.button("Ask Chatbot"):
+    reply = handle_user_query(user_query)
+    st.success(reply)
 
 # Footer
-st.markdown("<br>", unsafe_allow_html=True)
-st.caption("© 2026 M. Athar | Premium Converter UI")
+st.markdown("<hr style='border: 2px solid black;'>", unsafe_allow_html=True)
+st.markdown("*Copy© 2026 M.Athar | Made With ❤️ by Muhammad Athar Ur Rahman*")
