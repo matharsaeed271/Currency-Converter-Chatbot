@@ -99,6 +99,8 @@ res = session.post(url, json=body, headers=headers)
 res.raise_for_status()
 
 data = res.json()
+
+
 return data["choices"][0]["message"]["content"]
 
 # -----------------------------
