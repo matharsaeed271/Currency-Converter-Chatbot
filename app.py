@@ -94,8 +94,8 @@ Return ONLY valid JSON like:
     session = requests.Session()
     retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
     session.mount('https://', HTTPAdapter(max_retries=retries))
-    
-    res = requests.post(url, json=body, headers=headers)
+
+    res = session.post(url, json=body, headers=headers)
     res.raise_for_status()
 
     data = res.json()
