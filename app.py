@@ -91,7 +91,7 @@ Return ONLY valid JSON like:
 }
 
     # Retry session for robustness
-    session = requests.Session()
+    session = requests.session()
     retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
     session.mount('https://', HTTPAdapter(max_retries=retries))
 
