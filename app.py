@@ -52,7 +52,7 @@ def ask_groq_llama(prompt):
     if not api_key:
         raise ValueError("GROQ_API_KEY not set in environment")
     
-    url = "https://api.groq.com/openai/v1/completions"
+    url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
