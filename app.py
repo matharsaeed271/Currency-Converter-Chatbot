@@ -235,16 +235,16 @@ def handle_user_query(user_query):
             "He is a Software Engineer who designed and developed me. "
             "He built me as a currency converter and AI chatbot system."
         )
-     # 🚫 BLOCK ANY OTHER QUESTIONS ABOUT HIM
-    if "athar ur rahman" in msg or "muhammad athar ur rahman" in msg:
-        if any(x in msg for x in extra_info_keywords):
-            return "He is my creator 👨‍💻. No additional information is available.🚫(NOT ALLOWED)"
+    if ("muhammad athar ur rahman" in msg or "athar ur rahman" in msg) and any(x in msg for x in extra_info_keywords):
+        return "He is my creator 👨‍💻. No additional information is available.🚫(NOT ALLOWED)"
 
-    return (
-        "Muhammad Athar Ur Rahman is my creator 👨‍💻. "
-        "He is a Software Engineer who designed and developed me. "
-        "He built me as a currency converter and AI chatbot system."
-    )
+    # 🔥 ONLY FIXED DETAIL (SAFE RESPONSE)
+    if "muhammad athar ur rahman" in msg or "athar ur rahman" in msg:
+        return (
+            "Muhammad Athar Ur Rahman is my creator 👨‍💻. "
+            "He is a Software Engineer who designed and developed me. "
+            "He built me as a currency converter and AI chatbot system."
+        )
         
     try:
         return ask_groq_chatbot(user_query)
