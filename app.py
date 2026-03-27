@@ -251,7 +251,8 @@ if prompt:
         st.markdown(prompt)
 
     # Get AI response
-    reply = ask_groq_chatbot(prompt)
+    # reply = ask_groq_chatbot(prompt)
+    reply = handle_user_query(prompt)
 
     # Save bot reply
     st.session_state.messages.append({"role": "assistant", "content": reply})
