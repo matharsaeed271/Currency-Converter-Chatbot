@@ -10,7 +10,7 @@ from requests.packages.urllib3.util.retry import Retry
 # -----------------------------
 # Load .env
 # -----------------------------
-load_dotenv()  # make sure GROQ_API_KEY is set here
+# load_dotenv()  # make sure GROQ_API_KEY is set here
 
 # -----------------------------
 # Full Currency List
