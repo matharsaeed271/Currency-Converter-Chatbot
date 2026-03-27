@@ -139,13 +139,13 @@ def ask_groq_llama(prompt):
 # -----------------------------
 def handle_user_query(user_query):
     # Check if it's a currency conversion query
-    if re.search(r"\d+", user_query) and re.search(r"\b(USD|PKR|EUR|GBP|INR|JPY|AUD|CAD)\b", user_query.upper()):
+    if re.search(r"\d+", user_query) and re.search(r"(USD|PKR|EUR|GBP|INR|JPY|AUD|CAD|\$)", user_query.upper())
         try:
             groq_response = ask_groq_llama(user_query)
             output_text = groq_response
             
             # Extract JSON safely
-            match = re.search(r"\{.*\}", output_text, re.DOTALL)
+            match = re.search(r"\{.*?\}", output_text, re.DOTALL)
             if match:
                 parsed = json.loads(match.group(0))
                 amt = float(parsed.get("amount"))
