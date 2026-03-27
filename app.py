@@ -235,4 +235,4 @@ if prompt:
 
 # Footer
 st.markdown("<hr style='border: 2px solid black;'>", unsafe_allow_html=True)
-st.markdown("*Copy© 2026 M.Athar | Made With ❤️ by Muhammad Athar Ur Rahman*")
+st.markdown("*Copy© 2026 M.Athar | Made by Muhammad Athar Ur Rahman*")
