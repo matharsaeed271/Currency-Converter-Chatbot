@@ -183,7 +183,46 @@ def handle_user_query(user_query):
         "creator of you",
         "tumhain kis ny banaya hy",
         "tumhara owner kon hy",
-        "Tumhain kis ny banaya hy"
+        "Tumhain kis ny banaya hy",
+        "who create you",
+        "who developed you",
+        "who designed you",
+        "who programmed you",
+        "who trained you",
+        "who is behind you",
+        "who is responsible for you",
+        "Who are you owner",
+        "who owns you",
+        "who is your boss",
+        "who is your developer",
+        "who is your maker",
+        "who is your author",
+        "who created this bot",
+        "who made this chatbot",
+        "who built this AI",
+        "your owner?",
+        "who made u",
+        "who created u",
+        "who build you",
+        "who is ur owner",
+        "who dev you",
+        "tumhain kis ne banaya",
+        "tum kis ne banaya",
+        "tumhara malik kon hai",
+        "tumhara creator kon hai",
+        "tum kis ka project ho",
+        "tum kis ne develop kiya",
+        "tum kis ne design kiya",
+        "yeh chatbot kis ne banaya",
+        "who creatd you",
+        "who made u?",
+        "who is ur owener",
+        "who devloped you",
+        "tumhara owener kon hai",
+        "tumhain bananay wala kon hy",
+        "tumhain kisi ny tuo banaya ho ga na, us ka naam batao?",
+        "apnay malik ka naam hi bata duo",
+        "apnay creator ka naam batao"
     ]
 
     if any(q in msg for q in owner_questions):
@@ -196,7 +235,10 @@ def handle_user_query(user_query):
             "He is a Software Engineer who designed and developed me. "
             "He built me as a currency converter and AI chatbot system."
         )
-
+     # 🚫 BLOCK ANY OTHER QUESTIONS ABOUT HIM
+    if "athar ur rahman" in msg:
+        return "He is my creator 👨‍💻. I cannot share any additional information.🚫(NOT ALLOWED)"
+        
     try:
         return ask_groq_chatbot(user_query)
     except Exception as e:
