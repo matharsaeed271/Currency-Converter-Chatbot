@@ -1,111 +1,75 @@
+import streamlit as st
 import requests
-from flask import Flask, request, render_template
-from flask import jsonify
-app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return render_template('currency_converter.html')  # HTML file
+# Page config
+st.set_page_config(page_title="Currency Chatbot 💱", page_icon="💱")
 
-def get_currency_param(param):
-    # agar list hai → pehla element lo
-    if isinstance(param, list):
-        param = param[0]
-    # agar dict hai aur 'currency' key hai → value lo
-    if isinstance(param, dict) and 'currency' in param:
-        param = param['currency']
-    return param
+st.title("💱 Currency Converter Chatbot")
 
-# safe helper for amount
-def get_amount_param(param):
-    if isinstance(param, list):
-        param = param[0]
-    if isinstance(param, dict) and 'amount' in param:
-        param = param['amount']
-    return float(param)
+# Session state for chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-
-
-@app.route('/', methods=['POST'])
-def index():
-    data = request.get_json()
-    text = data.get('queryResult', {}).get('queryText', '')
-    params = data.get('queryResult', {}).get('parameters', {})
-    # params = data['queryResult']['parameters']
-    source_currency = get_currency_param(params.get('unit-currency'))
-    target_currency = get_currency_param(params.get('currency-name'))
-    # source_currency = data['queryResult']['parameters']['unit-currency']['currency']
-    # amount = data['queryResult']['parameters']['unit-currency']['amount']
-    # amount = get_amount_param(params.get('unit-currency'))
-    # target_currency = data['queryResult']['parameters']['currency-name']
-    # print(source_currency)
-    # print(amount)
-    # print(target_currency)
-
-    # cf = fetch_conversion_factor(source_currency, target_currency)
-    #############
-    # result = amount * cf
-    #######################
-    amount_param = params.get('unit-currency')
-    if isinstance(amount_param, list):
-        amount_param = amount_param[0]
-    if isinstance(amount_param, dict) and 'amount' in amount_param:
-        amount_param = amount_param['amount']
-    amount = float(amount_param)
-
-    cf = fetch_conversion_factor(source_currency, target_currency)
-    result = round(amount * cf, 2)
-    #######################
-    # if isinstance(source_currency, list):
-    #     source_currency = source_currency[0]
-    #
-    # if isinstance(target_currency, list):
-    #     target_currency = target_currency[0]
-    #
-    # result = round(amount * cf, 2)
-    # if isinstance(target_currency, list):
-    #     target_currency = target_currency[0]
-
-    print(f"{amount}{source_currency} is {result}{target_currency}")
-    return jsonify({
-        "fulfillmentText": f"{amount}{source_currency} is {result}{target_currency}"
-    })
-    # return f"{source_currency}\n{amount}\n{target_currency}\n{result}"
-    # return str(result)
-    ##############
-    # return "Hello"
-    # return str(source_currency + ' ' + str(amount) + ' ' + str(target_currency)
-
-
+# Function to fetch conversion rate
 def fetch_conversion_factor(source, target):
     api_key = "976a15c6f5679f761785d6a1"
-
-    if isinstance(source, list):
-        source = source[0]
-    if isinstance(target, list):
-        target = target[0]
 
     source = source.upper()
     target = target.upper()
 
-    url = f"https://v6.exchangerate-api.com/v6/976a15c6f5679f761785d6a1/pair/{source}/{target}"
+    url = f"https://v6.exchangerate-api.com/v6/{api_key}/pair/{source}/{target}"
 
-    response = requests.get(url)
-    response = response.json()
+    response = requests.get(url).json()
+
     if response['result'] == 'success':
         return response['conversion_rate']
     else:
-        raise ValueError(f"Failed to get conversion rate: {response.get('error-type', 'Unknown error')}")
-    # print(response)
-    # return response['{},{}'.format(source, target)]
-    # or using f-string
-    # return response['conversion_rate']
-    # return response[f'{source},{target}']
-    # return data['{}/{}'.format(source, target)]
-    # return data['source_currency,target_currency']
-    # .format(source,target)]
-    # return data['conversion_rate']
+        return None
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
+# Function to process user input
+def convert_currency(user_input):
+    try:
+        words = user_input.upper().split()
 
+        # Example: "100 USD TO PKR"
+        amount = float(words[0])
+        source = words[1]
+        target = words[3]
+
+        rate = fetch_conversion_factor(source, target)
+
+        if rate:
+            result = round(amount * rate, 2)
+            return f"{amount} {source} is {result} {target}"
+        else:
+            return "❌ Conversion failed"
+
+    except:
+        return "⚠️ Format: 100 USD to PKR"
+
+# Display chat history
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
+
+# Chat input
+user_input = st.chat_input("Type like: 100 USD to PKR")
+
+if user_input:
+    # Show user message
+    st.session_state.messages.append({"role": "user", "content": user_input})
+
+    with st.chat_message("user"):
+        st.write(user_input)
+
+    # Bot response
+    response = convert_currency(user_input)
+
+    st.session_state.messages.append({"role": "assistant", "content": response})
+
+    with st.chat_message("assistant"):
+        st.write(response)
+
+# Footer
+st.markdown("<hr>", unsafe_allow_html=True)
+st.write("© 2026 M. Athar | Made with ❤️")
