@@ -142,7 +142,7 @@ def handle_user_query(user_query):
     if re.search(r"\d+", user_query) and re.search(r"(USD|PKR|EUR|GBP|INR|JPY|AUD|CAD|\$)", user_query.upper()):
         try:
             groq_response = ask_groq_llama(user_query)
-            output_text = groq_response
+            output_text = groq_response.strip()
             
             # Extract JSON safely
             match = re.search(r"\{.*?\}", output_text, re.DOTALL)
