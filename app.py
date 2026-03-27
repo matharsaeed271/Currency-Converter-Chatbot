@@ -2,7 +2,7 @@ import os
 import json
 import requests
 import streamlit as st
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import re
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
