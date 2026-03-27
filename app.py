@@ -47,62 +47,93 @@ def fetch_conversion_factor(source, target):
 # -----------------------------
 # Groq Chatbot Function with retry
 # -----------------------------
-def ask_groq_llama(prompt):
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY not set in environment")
+# def ask_groq_llama(prompt):
+#     api_key = os.environ.get("GROQ_API_KEY")
+#     if not api_key:
+#         raise ValueError("GROQ_API_KEY not set in environment")
     
+#     url = "https://api.groq.com/openai/v1/chat/completions"
+#     headers = {
+#         "Authorization": f"Bearer {api_key}",
+#         "Content-Type": "application/json",
+#     }
+
+#     groq_prompt = f"""
+# You are a JSON parser for currency conversion queries.
+# Extract AMOUNT, SOURCE_CURRENCY, TARGET_CURRENCY.
+# Always respond in *valid JSON only*, no extra text.
+
+# Example:
+# Input: "Convert 150 USD to PKR"
+# Output: {{"amount":150,"source":"USD","target":"PKR"}}
+
+# Now parse this query:
+# \"\"\"{prompt}\"\"\"
+# """
+
+# body = {
+#     "model": "llama-3.1-8b-instant",
+#     "messages": [
+#         {
+#             "role": "system",
+#             "content": """You are a JSON parser for currency conversion queries.
+# Extract AMOUNT, SOURCE_CURRENCY, TARGET_CURRENCY.
+# Return ONLY valid JSON like:
+# {"amount":150,"source":"USD","target":"PKR"}"""
+#         },
+#         {
+#             "role": "user",
+#             "content": prompt
+#         }
+#     ],
+#     "temperature": 0.0,
+#     "max_tokens": 80
+# }
+
+#     # Retry session for robustness
+# session = requests.session()
+# retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
+# session.mount('https://', HTTPAdapter(max_retries=retries))
+
+# res = session.post(url, json=body, headers=headers)
+# res.raise_for_status()
+
+# data = res.json()
+
+
+# return data["choices"][0]["message"]["content"]
+#######################################################
+def ask_groq_llama(prompt):
+    api_key = st.secrets["GROQ_API_KEY"]
+
     url = "https://api.groq.com/openai/v1/chat/completions"
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
 
-    groq_prompt = f"""
-You are a JSON parser for currency conversion queries.
-Extract AMOUNT, SOURCE_CURRENCY, TARGET_CURRENCY.
-Always respond in *valid JSON only*, no extra text.
+    body = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "system", "content": "Return JSON only"},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.0,
+        "max_tokens": 80
+    }
 
-Example:
-Input: "Convert 150 USD to PKR"
-Output: {{"amount":150,"source":"USD","target":"PKR"}}
+    session = requests.Session()
+    retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
+    session.mount('https://', HTTPAdapter(max_retries=retries))
 
-Now parse this query:
-\"\"\"{prompt}\"\"\"
-"""
+    res = session.post(url, json=body, headers=headers)
+    res.raise_for_status()
 
-body = {
-    "model": "llama-3.1-8b-instant",
-    "messages": [
-        {
-            "role": "system",
-            "content": """You are a JSON parser for currency conversion queries.
-Extract AMOUNT, SOURCE_CURRENCY, TARGET_CURRENCY.
-Return ONLY valid JSON like:
-{"amount":150,"source":"USD","target":"PKR"}"""
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ],
-    "temperature": 0.0,
-    "max_tokens": 80
-}
+    data = res.json()
 
-    # Retry session for robustness
-session = requests.session()
-retries = Retry(total=3, backoff_factor=2, status_forcelist=[500,502,503,504])
-session.mount('https://', HTTPAdapter(max_retries=retries))
-
-res = session.post(url, json=body, headers=headers)
-res.raise_for_status()
-
-data = res.json()
-
-
-return data["choices"][0]["message"]["content"]
-
+    return data["choices"][0]["message"]["content"]
+#######################################################
 # -----------------------------
 # Handle User Queries (currency + normal conversation)
 # -----------------------------
