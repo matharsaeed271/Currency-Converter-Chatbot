@@ -171,6 +171,18 @@ def ask_groq_chatbot(user_input):
 #         else:
 #             return "I can help with currency conversion 💱. Try: 'Convert 100 USD to PKR'"
 def handle_user_query(user_query):
+    msg = user_query.lower().strip()
+
+    # 🔥 Special identity rule
+    if "who is your owner" in msg or "who made you" in msg or "who created you" in msg:
+        return "My owner is Muhammad Athar Ur Rahman 👨‍💻"
+    # 🔥 Detailed info about owner
+    if "muhammad athar ur rahman" in msg:
+        return (
+            "Muhammad Athar Ur Rahman is my creator 👨‍💻. "
+            "He is a Software Engineer who designed and developed me. "
+            "He built me as a currency converter and AI chatbot system."
+        )
     try:
         return ask_groq_chatbot(user_query)
     except Exception as e:
