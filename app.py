@@ -284,22 +284,6 @@ st.subheader("🤖 Chatbot (AI Conversation)")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 ########---------------------------------------########################
-from gtts import gTTS
-import os
-import streamlit as st
-
-IS_CLOUD = os.environ.get("STREAMLIT_SHARING") is not None
-
-prompt = st.chat_input("Type your message...")
-
-# Voice Button (ONLY ONCE)
-if st.button("🎤 Speak", key="speak_btn"):
-    if IS_CLOUD:
-        st.warning("🎤 Voice input not supported on Streamlit Cloud")
-    else:
-        speech_text = speech_to_text()
-        prompt = speech_text
-
 
 ########---------------------------------------########################
 # Display chat history
@@ -308,40 +292,21 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # User input
-# prompt = st.chat_input("Type your message...")
+prompt = st.chat_input("Type your message...")
 
-# if prompt:
-#     # Save user message
-#     st.session_state.messages.append({"role": "user", "content": prompt})
-
-#     with st.chat_message("user"):
-#         st.markdown(prompt)
-
-#     # Get AI response
-#     # reply = ask_groq_chatbot(prompt)
-#     reply = handle_user_query(prompt)
-
-    #########------------------------------------##########################
-
-# Handle text input
 if prompt:
-    # Show user message
+# Save user message
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Main logic (rules apply)
+    # Get AI response
+    reply = ask_groq_chatbot(prompt)
     reply = handle_user_query(prompt)
 
-    # Save bot reply
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    #########------------------------------------##########################
 
-    with st.chat_message("assistant"):
-        st.markdown(reply)
-
-    # Voice output
-    speak(reply)
     #########------------------------------------##########################
     # Save bot reply
     st.session_state.messages.append({"role": "assistant", "content": reply})
