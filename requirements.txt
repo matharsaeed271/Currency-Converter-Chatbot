@@ -5,4 +5,4 @@ dotenv
 streamlit-webrtc
 speechrecognition
 gtts
-PyAudio
+
