@@ -328,28 +328,28 @@ for msg in st.session_state.messages:
 prompt = st.chat_input("Type your message...")
 
     # Voice Button
-    if st.button("🎤 Speak"):
-        prompt = speech_to_text()
+if st.button("🎤 Speak"):
+    prompt = speech_to_text()
     
     # Handle both text + voice
-    if prompt:
-        # Show user message
-        st.session_state.messages.append({"role": "user", "content": prompt})
+if prompt:
+    # Show user message
+    st.session_state.messages.append({"role": "user", "content": prompt})
     
-        with st.chat_message("user"):
-            st.markdown(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
     
-        # Important: same function (rules apply)
-        reply = handle_user_query(prompt)
+    # Important: same function (rules apply)
+    reply = handle_user_query(prompt)
     
-        # Save reply
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+    # Save reply
+    st.session_state.messages.append({"role": "assistant", "content": reply})
     
-        with st.chat_message("assistant"):
-            st.markdown(reply)
+    with st.chat_message("assistant"):
+        st.markdown(reply)
     
-        # Voice output
-        speak(reply)
+    # Voice output
+    speak(reply)
     #########------------------------------------##########################
     # Save bot reply
     st.session_state.messages.append({"role": "assistant", "content": reply})
