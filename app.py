@@ -284,26 +284,17 @@ st.subheader("🤖 Chatbot (AI Conversation)")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 ########---------------------------------------########################
-import speech_recognition as sr
 from gtts import gTTS
 import os
 
-def speech_to_text():
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("🎤 Listening...")
-        audio = r.listen(source)
+IS_CLOUD = os.environ.get("STREAMLIT_SHARING") is not None
 
-    try:
-        text = r.recognize_google(audio)
-        return text
-    except:
-        return "Sorry, could not understand audio"
+if st.button("🎤 Speak"):
+    if IS_CLOUD:
+        st.warning("🎤 Voice input is not supported on Streamlit Cloud")
+    else:
+        prompt = speech_to_text()
 
-def speak(text):
-    tts = gTTS(text)
-    tts.save("response.mp3")
-    st.audio("response.mp3")
 ########---------------------------------------########################
 # Display chat history
 for msg in st.session_state.messages:
@@ -327,27 +318,27 @@ for msg in st.session_state.messages:
     #########------------------------------------##########################
 prompt = st.chat_input("Type your message...")
 
-    # Voice Button
+# Voice Button (DISABLED ON CLOUD)
 if st.button("🎤 Speak"):
-    prompt = speech_to_text()
-    
-    # Handle both text + voice
+    st.warning("🎤 Voice input not supported on Cloud")
+
+# Handle text input
 if prompt:
     # Show user message
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
+
     with st.chat_message("user"):
         st.markdown(prompt)
-    
-    # Important: same function (rules apply)
+
+    # Main logic (rules apply)
     reply = handle_user_query(prompt)
-    
-    # Save reply
+
+    # Save bot reply
     st.session_state.messages.append({"role": "assistant", "content": reply})
-    
+
     with st.chat_message("assistant"):
         st.markdown(reply)
-    
+
     # Voice output
     speak(reply)
     #########------------------------------------##########################
