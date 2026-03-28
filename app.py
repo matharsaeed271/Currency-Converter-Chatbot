@@ -286,14 +286,20 @@ if "messages" not in st.session_state:
 ########---------------------------------------########################
 from gtts import gTTS
 import os
+import streamlit as st
 
 IS_CLOUD = os.environ.get("STREAMLIT_SHARING") is not None
 
-if st.button("🎤 Speak"):
+prompt = st.chat_input("Type your message...")
+
+# Voice Button (ONLY ONCE)
+if st.button("🎤 Speak", key="speak_btn"):
     if IS_CLOUD:
-        st.warning("🎤 Voice input is not supported on Streamlit Cloud")
+        st.warning("🎤 Voice input not supported on Streamlit Cloud")
     else:
-        prompt = speech_to_text()
+        speech_text = speech_to_text()
+        prompt = speech_text
+
 
 ########---------------------------------------########################
 # Display chat history
@@ -316,11 +322,6 @@ for msg in st.session_state.messages:
 #     reply = handle_user_query(prompt)
 
     #########------------------------------------##########################
-prompt = st.chat_input("Type your message...")
-
-# Voice Button (DISABLED ON CLOUD)
-if st.button("🎤 Speak"):
-    st.warning("🎤 Voice input not supported on Cloud")
 
 # Handle text input
 if prompt:
