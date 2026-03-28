@@ -283,26 +283,74 @@ st.subheader("🤖 Chatbot (AI Conversation)")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
+########---------------------------------------########################
+import speech_recognition as sr
+from gtts import gTTS
+import os
 
+def speech_to_text():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("🎤 Listening...")
+        audio = r.listen(source)
+
+    try:
+        text = r.recognize_google(audio)
+        return text
+    except:
+        return "Sorry, could not understand audio"
+
+def speak(text):
+    tts = gTTS(text)
+    tts.save("response.mp3")
+    st.audio("response.mp3")
+########---------------------------------------########################
 # Display chat history
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
 # User input
+# prompt = st.chat_input("Type your message...")
+
+# if prompt:
+#     # Save user message
+#     st.session_state.messages.append({"role": "user", "content": prompt})
+
+#     with st.chat_message("user"):
+#         st.markdown(prompt)
+
+#     # Get AI response
+#     # reply = ask_groq_chatbot(prompt)
+#     reply = handle_user_query(prompt)
+
+    #########------------------------------------##########################
 prompt = st.chat_input("Type your message...")
 
-if prompt:
-    # Save user message
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Get AI response
-    # reply = ask_groq_chatbot(prompt)
-    reply = handle_user_query(prompt)
-
+    # Voice Button
+    if st.button("🎤 Speak"):
+        prompt = speech_to_text()
+    
+    # Handle both text + voice
+    if prompt:
+        # Show user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
+    
+        with st.chat_message("user"):
+            st.markdown(prompt)
+    
+        # Important: same function (rules apply)
+        reply = handle_user_query(prompt)
+    
+        # Save reply
+        st.session_state.messages.append({"role": "assistant", "content": reply})
+    
+        with st.chat_message("assistant"):
+            st.markdown(reply)
+    
+        # Voice output
+        speak(reply)
+    #########------------------------------------##########################
     # Save bot reply
     st.session_state.messages.append({"role": "assistant", "content": reply})
 
