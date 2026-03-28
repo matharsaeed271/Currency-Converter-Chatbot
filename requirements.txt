@@ -3,6 +3,3 @@ requests
 gunicorn
 dotenv
 streamlit-webrtc
-speechrecognition
-gtts
-
